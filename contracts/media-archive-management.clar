@@ -227,3 +227,22 @@
   )
 )
 
+;; Permanent media record removal function with ownership verification
+;; Completely removes a media record from the archive system
+;; Parameters: record-number - unique identifier of the record to remove
+;; Returns: success confirmation boolean
+(define-public (remove-media-record (record-number uint))
+  (let
+    (
+      (target-record (unwrap! (map-get? media-archive-repository { record-number: record-number })
+        missing-record-code))
+    )
+    ;; Strict ownership verification before allowing removal
+    (asserts! (record-exists-check record-number) missing-record-code)
+    (asserts! (is-eq (get current-owner target-record) tx-sender) ownership-violation-code)
+
+    ;; Execute permanent removal from the archive repository
+    (map-delete media-archive-repository { record-number: record-number })
+    (ok true)
+  )
+)
